@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Ads AI Automation v7 God Mode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS (V6 EXACT UI RESTORED)
+══════════════════════════════════════ */
+:root {
+  --bg:         #040b1a;
+  --card:       rgba(10,22,40,0.85);
+  --border:     rgba(0,212,255,0.10);
+  --border-hov: rgba(0,212,255,0.30);
+  --primary:    #00d4ff;
+  --violet:     #8b5cf6;
+  --violet-lt:  #a78bfa;
+  --neon:       #34ffe0;
+  --warning:    #fbbf24;
+  --danger:     #f87171;
+  --text:       #e2e8f0;
+  --muted:      #64748b;
+  --radius:     16px;
+  --shadow:     0 4px 24px rgba(0,0,0,0.4);
+  --font-disp:  'Syne', sans-serif;
+  --font-body:  'DM Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+  background-size:60px 60px;animation:gridMove 25s linear infinite;
+}
+.wrapper{position:relative;z-index:1;}
+
+/* ── HEADER ── */
+.header{background:rgba(4,11,26,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#00d4ff,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:bold;color:white;font-family:var(--font-disp);}
+.header h1{font-family:var(--font-disp);font-size:18px;font-weight:700;background:linear-gradient(135deg,#4df0ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.version-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(139,92,246,0.1);color:var(--violet-lt);border:1px solid rgba(139,92,246,0.25);font-family:var(--font-disp);}
+.status-pill{display:flex;align-items:center;gap:8px;cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:7px 14px;border-radius:20px;font-size:13px;transition:border-color 0.2s;}
+.status-pill:hover{border-color:var(--border-hov);}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot.online{background:#34ffe0;box-shadow:0 0 8px #34ffe0;animation:dotPulse 2s infinite;}
+.dot.offline{background:#f87171;box-shadow:0 0 8px #f87171;}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ── TABS ── */
+.tabs{background:rgba(4,11,26,0.7);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;padding:0 32px;overflow-x:auto;gap:4px;}
+.tab{padding:14px 18px;cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font-disp);color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.25s;display:flex;align-items:center;gap:6px;}
+.tab:hover{color:var(--primary);}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.tab-badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 6px;border-radius:12px;background:linear-gradient(135deg,#00d4ff,#8b5cf6);font-size:9px;font-weight:700;color:white;margin-left:4px;}
+
+/* ── LAYOUT ── */
+.main{padding:28px 32px;max-width:1200px;margin:0 auto;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.card{background:var(--card);backdrop-filter:blur(20px);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:20px;border:1px solid var(--border);transition:border-color 0.3s;}
+.card:hover{border-color:rgba(0,212,255,0.18);}
+.card-title{font-family:var(--font-disp);font-size:15px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;color:var(--text);}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:7px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;font-family:var(--font-disp);}
+input,select{padding:11px 14px;background:rgba(4,11,26,0.6);border:1.5px solid rgba(0,212,255,0.15);border-radius:10px;font-size:14px;color:var(--text);outline:none;transition:all 0.25s;font-family:var(--font-body);}
+input::placeholder{color:var(--muted);}
+input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,212,255,0.08);background:rgba(0,212,255,0.03);}
+select option{background:#0a1628;color:var(--text);}
+
+/* ── MAGIC URL BOX (100% FIXED INLINE LAYOUT) ── */
+.magic-box{background:rgba(139,92,246,0.06);padding:24px;border-radius:16px;margin-bottom:24px;border:1px solid rgba(139,92,246,0.3);box-shadow:0 4px 20px rgba(139,92,246,0.08);}
+.magic-title{color:var(--violet-lt);font-size:16px;margin-bottom:8px;font-family:var(--font-disp);font-weight:700;display:flex;align-items:center;gap:8px;}
+.magic-row{display:flex;flex-direction:row;gap:12px;align-items:stretch;}
+.magic-row input{flex:1;border-color:rgba(139,92,246,0.4);margin:0;}
+.magic-row button{width:auto;margin:0;white-space:nowrap;}
+
+/* ── BUTTONS ── */
+.btn{width:100%;padding:15px;font-size:14px;font-weight:600;font-family:var(--font-disp);border:none;border-radius:12px;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;position:relative;overflow:hidden;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
+.btn:not(:disabled):hover{transform:translateY(-2px);}
+.btn-blue{background:linear-gradient(135deg,#00d4ff,#8b5cf6);color:white;box-shadow:0 4px 20px rgba(0,212,255,0.25);}
+.btn-blue:not(:disabled):hover{box-shadow:0 6px 30px rgba(0,212,255,0.4);}
+.btn-green{background:linear-gradient(135deg,#34ffe0,#00d4ff);color:#040b1a;box-shadow:0 4px 20px rgba(52,255,224,0.25);}
+.btn-green:not(:disabled):hover{box-shadow:0 6px 30px rgba(52,255,224,0.4);}
+.btn-teal{background:linear-gradient(135deg,#8b5cf6,#00d4ff);color:white;box-shadow:0 4px 20px rgba(139,92,246,0.25);}
+.btn-teal:not(:disabled):hover{box-shadow:0 6px 30px rgba(139,92,246,0.4);}
+.btn-sm{padding:0 24px;} /* Fixed specific button heights */
+
+/* ── PROGRESS ── */
+.progress-wrap{display:none;margin-top:20px;}
+.progress-bar{background:rgba(255,255,255,0.06);border-radius:10px;height:6px;overflow:hidden;margin-bottom:16px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#00d4ff,#8b5cf6,#34ffe0);border-radius:10px;transition:width 0.5s ease;width:0%;box-shadow:0 0 10px rgba(0,212,255,0.5);}
+.steps{display:flex;flex-direction:column;gap:8px;}
+.step{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);font-size:13px;color:var(--muted);transition:all 0.3s;}
+.step.active{background:rgba(0,212,255,0.06);color:var(--primary);border-color:rgba(0,212,255,0.25);}
+.step.done{background:rgba(52,255,224,0.06);color:var(--neon);border-color:rgba(52,255,224,0.2);}
+
+/* ── RESULTS GRID ── */
+.r-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.r-card{background:var(--card);backdrop-filter:blur(20px);border-radius:var(--radius);padding:20px;border:1px solid var(--border);box-shadow:var(--shadow);transition:border-color 0.3s;}
+.r-card:hover{border-color:var(--border-hov);}
+.r-card.full{grid-column:1/-1;}
+.r-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:14px;font-family:var(--font-disp);}
+.score-circle{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:white;margin:0 auto 12px;font-family:var(--font-disp);}
+.s-hi{background:linear-gradient(135deg,#34ffe0,#00d4ff);box-shadow:0 0 24px rgba(52,255,224,0.4);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-box{text-align:center;padding:12px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.1);border-radius:10px;}
+.stat-num{font-size:20px;font-weight:700;color:var(--primary);font-family:var(--font-disp);}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* ── KEYWORDS & ADS ── */
+.kw-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.kw{padding:4px 11px;border-radius:14px;font-size:12px;font-weight:500;}
+.kw-b{background:rgba(0,212,255,0.1);color:var(--primary);border:1px solid rgba(0,212,255,0.2);padding:6px 14px;border-radius:16px;}
+.kw-p{background:rgba(52,255,224,0.1);color:var(--neon);border:1px solid rgba(52,255,224,0.2);padding:6px 14px;border-radius:16px;}
+.kw-e{background:rgba(248,113,113,0.1);color:var(--danger);border:1px solid rgba(248,113,113,0.2);padding:6px 14px;border-radius:16px;}
+.kw-n{background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid rgba(255,255,255,0.08);padding:6px 14px;border-radius:16px;}
+
+.ad-box{border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:14px;margin-bottom:10px;background:rgba(0,212,255,0.03);}
+.ad-url{color:var(--neon);font-size:11px;margin-bottom:4px;}
+.ad-hl{color:var(--primary);font-size:15px;font-weight:500;margin-bottom:4px;font-family:var(--font-disp);}
+.ad-desc{color:var(--text);font-size:13px;line-height:1.5;}
+
+.ab-box{background:rgba(52,255,224,0.04);border:1px dashed var(--neon);border-radius:12px;padding:20px;margin-top:20px;}
+.ab-title{color:var(--neon);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;font-family:var(--font-disp); display:flex; align-items:center; gap:8px;}
+.ad-hl.ab{color:var(--neon);}
+
+.service-group{margin-bottom:14px;}
+.service-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;font-family:var(--font-disp);}
+.ag-item{padding:12px 16px;border-radius:10px;border:1px solid rgba(0,212,255,0.1);margin-bottom:8px;background:rgba(0,212,255,0.03);}
+.sitelink{display:inline-block;padding:6px 12px;border:1px solid rgba(0,212,255,0.2);border-radius:8px;font-size:12px;color:var(--primary);margin:4px;background:rgba(0,212,255,0.06);}
+
+/* ── TABLES & BIDS ── */
+.schedule-table{width:100%;border-collapse:collapse;font-size:13px;}
+.schedule-table th{padding:10px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.06);font-family:var(--font-disp);}
+.schedule-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text);}
+.modifier-high{color:var(--neon);font-weight:600;}
+.modifier-low{color:var(--danger);}
+.modifier-normal{color:var(--muted);}
+.bid-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.bid-item{padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center;}
+.bid-item-label{font-size:11px;color:var(--muted);margin-bottom:5px;}
+.bid-item-val{font-size:15px;font-weight:700;font-family:var(--font-disp);}
+.bid-pos{color:var(--neon);}
+.bid-neg{color:var(--danger);}
+.bid-zero{color:var(--muted);}
+
+/* ── CODE & SETUP (V6 COMPLETELY RESTORED) ── */
+.code-preview{background:#020710;color:#7dd3fc;padding:16px;border-radius:10px;font-family:'Courier New',monospace;font-size:12px;overflow-x:auto;margin-top:10px;border:1px solid rgba(0,212,255,0.15);line-height:1.6;}
+.copy-btn{margin-top:10px;padding:9px 18px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:10px;cursor:pointer;font-size:13px;color:var(--primary);font-family:var(--font-disp);font-weight:600;transition:all 0.2s;}
+.copy-btn:hover{background:rgba(0,212,255,0.18);}
+.email-btn{background:rgba(52,255,224,0.1);border-color:rgba(52,255,224,0.3);color:var(--neon);}
+.email-btn:hover{background:rgba(52,255,224,0.2);}
+
+.setup-item{display:flex;gap:16px;padding:18px;border-radius:12px;border:1px solid var(--border);margin-bottom:10px;background:rgba(255,255,255,0.02);}
+.setup-num{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#00d4ff,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-disp);}
+.setup-body h4{font-size:14px;font-weight:600;margin-bottom:5px;font-family:var(--font-disp);}
+.setup-body p{font-size:13px;color:var(--muted);line-height:1.6;}
+.env-block{background:#020710;color:#a5f3fc;padding:16px;border-radius:10px;font-family:'Courier New',monospace;font-size:12px;border:1px solid rgba(0,212,255,0.15);line-height:1.8;overflow-x:auto;margin-top:10px;}
+.env-comment{color:#64748b;}
+.env-key{color:#34ffe0;}
+.env-val{color:#fbbf24;}
+
+/* ── TOGGLE ── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:rgba(0,212,255,0.04);border-radius:12px;border:1.5px solid rgba(0,212,255,0.15);margin-top:16px;}
+.toggle-label-title{font-size:14px;font-weight:600;font-family:var(--font-disp);background:linear-gradient(135deg,#4df0ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.switch{position:relative;display:inline-block;width:48px;height:26px;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:26px;transition:0.3s;}
+.slider:before{content:'';position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s;}
+input:checked+.slider{background:linear-gradient(135deg,#00d4ff,#8b5cf6);border-color:transparent;}
+input:checked+.slider:before{transform:translateX(22px);}
+.customer-id-box{display:none;margin-top:14px;padding:16px;background:rgba(251,191,36,0.06);border-radius:12px;border:1.5px solid rgba(251,191,36,0.3);}
+.customer-id-box.show{display:block;}
+
+/* ── ANALYTICS / COMPETITORS ── */
+.roi-results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.roi-metric{padding:16px;border-radius:12px;text-align:center;border:1px solid rgba(0,212,255,0.1);background:rgba(0,212,255,0.04);}
+.roi-val{font-size:26px;font-weight:800;font-family:var(--font-disp);}
+.roi-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;}
+.projection-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.projection-bar-label{font-size:12px;color:var(--muted);width:80px;flex-shrink:0;font-family:var(--font-disp);}
+.projection-bar-wrap{flex:1;height:24px;background:rgba(255,255,255,0.04);border-radius:6px;overflow:hidden;}
+.projection-bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;transition:width 1s ease;}
+.projection-bar-val{font-size:11px;font-weight:700;color:white;font-family:var(--font-disp);}
+.competitor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px;}
+.competitor-card{padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);}
+.comp-type{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;font-family:var(--font-disp);}
+.comp-spend{font-size:12px;color:var(--warning);margin-bottom:6px;}
+.iframe-outer{border:1px solid rgba(0,212,255,0.15);border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.02);display:flex;justify-content:center;padding:16px;min-height:600px;}
+.empty-state{text-align:center;padding:70px;color:var(--muted);}
+.empty-icon{font-size:52px;margin-bottom:14px;opacity:0.5;}
+.empty-title{font-size:16px;font-weight:600;font-family:var(--font-disp);color:var(--text);margin-bottom:6px;}
+
+/* ── HISTORY ── */
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:12px;border:1px solid var(--border);margin-bottom:8px;background:rgba(255,255,255,0.02);transition:border-color 0.2s;}
+.hist-item:hover{border-color:var(--border-hov);}
+.badge{padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;font-family:var(--font-disp);}
+.badge-live{background:rgba(52,255,224,0.1);color:var(--neon);border:1px solid rgba(52,255,224,0.2);}
+.badge-draft{background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid rgba(255,255,255,0.08);}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <div class="header-logo">
+    <div class="logo-icon">V7</div>
+    <h1>Google Ads AI Automation <span style="color:var(--violet-lt)">v7 God Mode</span></h1>
+  </div>
+  <div class="header-right">
+    <span class="version-badge">5 AGENTS ACTIVE</span>
+    <div class="status-pill" onclick="checkHealth()">
+      <div class="dot online" id="statusDot"></div>
+      <span id="statusText">System Online</span>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="goTab('generate')">🚀 Generate</div>
+  <div class="tab" onclick="goTab('results')">📊 Results</div>
+  <div class="tab" onclick="goTab('landing')">🌐 Landing Page</div>
+  <div class="tab" onclick="goTab('analytics')">📈 Analytics <span class="tab-badge">NEW</span></div>
+  <div class="tab" onclick="goTab('history')">📂 History</div>
+  <div class="tab" onclick="goTab('setup')">⚙️ Setup</div>
+</div>
+
+<div class="main">
+
+<div class="tab-content active" id="tab-generate">
+  <div class="card">
+    
+    <div class="magic-box">
+      <h3 class="magic-title">✨ One-Click Magic URL</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Paste a client's website URL. AI agents will analyze the business and auto-fill the entire form.</p>
+      <div class="magic-row">
+        <input id="magic_url" placeholder="https://www.clientsite.com" style="background:rgba(0,0,0,0.3);">
+        <button class="btn btn-teal btn-sm" id="magicBtn" onclick="autoFillFromURL()">
+          <span id="magic_btn_text">✨ Analyze & Autofill</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-title">📋 Campaign Details</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Business Name</label><input id="f_name" placeholder="e.g. Dog Days Pools"></div>
+      <div class="form-group"><label>Business Type</label><input id="f_type" placeholder="e.g. Pool Service"></div>
+      <div class="form-group"><label>Website URL</label><input id="f_url" type="url" placeholder="https://www.yourbusiness.com"></div>
+      <div class="form-group"><label>Target Location</label><input id="f_loc" placeholder="e.g. Miami, FL"></div>
+      
+      <div class="form-group">
+        <label style="color:var(--primary);">Target Language 🌐</label>
+        <select id="f_lang" style="border-color:var(--primary);">
+          <option value="English">English</option>
+          <option value="Spanish">Spanish (Español)</option>
+          <option value="French">French (Français)</option>
+          <option value="German">German (Deutsch)</option>
+        </select>
+      </div>
+      
+      <div class="form-group"><label>Daily Budget (USD)</label><input id="f_budget" type="number" value="50" oninput="syncBudgetToROI()"></div>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label-title">⚡ Auto-Publish to Google Ads</div>
+        <div class="toggle-label-sub">Push campaign live automatically after AI generates it</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="f_publish" onchange="togglePublish()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="customer-id-box" id="cidBox">
+      <label>Google Ads Account ID (required to publish)</label>
+      <input id="f_cid" placeholder="e.g. 123-456-7890" style="margin-top:10px;">
+      <p>Campaign will be created in <strong>PAUSED</strong> status — review before enabling.</p>
+    </div>
+
+    <button class="btn btn-blue" id="btnGen" onclick="runCampaign()">🤖 Generate Campaign with 5 AI Agents</button>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar"><div class="progress-fill" id="pFill"></div></div>
+      <div class="steps">
+        <div class="step" id="s1">🔑 Agent 1: Generating exhaustive service keywords...</div>
+        <div class="step" id="s2">✍️ Agent 2: Writing premium ad copy & sitelinks...</div>
+        <div class="step" id="s3">📊 Agent 3: Building STAG campaign architecture...</div>
+        <div class="step" id="s4">🔍 Agent 4: Scraping competitor intelligence...</div>
+        <div class="step" id="s5">🧪 Agent 5: Writing Urgency A/B Test variations...</div>
+        <div class="step" id="s6" style="display:none;">📡 Publishing to Google Ads...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-results">
+  <div id="resultsContainer" style="display:none;"></div>
+  <div class="empty-state" id="noResults">
+    <div class="empty-icon">🤖</div>
+    <div class="empty-title">No campaign generated yet</div>
+    <div class="empty-sub">Go to the Generate tab and fill in the form</div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-landing">
+  <div class="card">
+    <div class="card-title">🌐 AI Landing Page Generator</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Fill the Generate tab form first, then click below to create a custom Tailwind landing page matched to your campaign.</p>
+    <button class="btn btn-teal" id="btnLP" onclick="generateLandingPage()">🌐 Generate Tailwind Landing Page</button>
+    <div id="lpPreviewCard" style="display:none; margin-top:20px;">
+      <div class="iframe-outer">
+        <iframe id="lpIframe" style="width:100%; height:700px; border:none; border-radius:10px; background:white;"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-analytics">
+  <div class="card">
+    <div class="card-title">📈 ROI Calculator & Campaign Projector</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Adjust inputs to project your campaign performance in real-time.</div>
+        <div class="form-group" style="margin-bottom:14px;"><label>Daily Budget (USD)</label><input type="number" id="roi_budget" value="50" oninput="calculateROI()"></div>
+        <div class="form-group" style="margin-bottom:14px;"><label>Expected CPC ($)</label><input type="number" id="roi_cpc" value="5.00" oninput="calculateROI()"></div>
+        <div class="form-group" style="margin-bottom:14px;"><label>Landing Page Conversion Rate (%)</label><input type="number" id="roi_cvr" value="3" oninput="calculateROI()"></div>
+        <div class="form-group" style="margin-bottom:14px;"><label>Average Deal / Lead Value ($)</label><input type="number" id="roi_deal" value="500" oninput="calculateROI()"></div>
+        <div class="form-group"><label>Close Rate on Leads (%)</label><input type="number" id="roi_close" value="20" oninput="calculateROI()"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Projected monthly performance</div>
+        <div class="roi-results-grid" id="roiResults"></div>
+      </div>
+    </div>
+    <div style="margin-top:28px;">
+      <div class="r-title">📊 3-Month Revenue Projection</div>
+      <div id="roiChart"></div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="card-title">🔍 Competitor Intelligence</div>
+    <div id="competitorResults">
+      <p style="font-size:13px; color:var(--muted);">Generate a campaign first to see your competitor analysis from Agent 4.</p>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-history">
+  <div class="card">
+    <div class="card-title">📂 Campaign History</div>
+    <div id="histList"><p style="color:var(--muted);font-size:14px;">No campaigns yet.</p></div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-setup">
+  <div class="card">
+    <div class="card-title">⚙️ v7 God Mode Setup — Do This Once</div>
+
+    <div class="setup-item">
+      <div class="setup-num">1</div>
+      <div class="setup-body">
+        <h4>Install Required Libraries</h4>
+        <p>Run in VS Code terminal:</p>
+        <div class="code-preview">pip install python-dotenv google-ads litellm crewai langchain-openai beautifulsoup4 requests uvicorn fastapi</div>
+      </div>
+    </div>
+
+    <div class="setup-item">
+      <div class="setup-num">2</div>
+      <div class="setup-body">
+        <h4>Create your .env file (Security — Never Hardcode Keys)</h4>
+        <p>In the same folder as <code style="color:var(--primary)">google_ads_crew_v7.py</code>, create a file called <strong>.env</strong> and add:</p>
+        <div class="env-block">
+<span class="env-comment"># ── Required ──────────────────────────────────</span>
+<span class="env-key">GROQ_API_KEY</span>=<span class="env-val">your_groq_api_key_here</span>
+
+<span class="env-comment"># ── Google Ads (add when you have Standard Access) ──</span>
+<span class="env-key">GOOGLE_ADS_DEVELOPER_TOKEN</span>=<span class="env-val">your_developer_token</span>
+<span class="env-key">GOOGLE_ADS_CLIENT_ID</span>=<span class="env-val">your_client_id.apps.googleusercontent.com</span>
+<span class="env-key">GOOGLE_ADS_CLIENT_SECRET</span>=<span class="env-val">your_client_secret</span>
+<span class="env-key">GOOGLE_ADS_REFRESH_TOKEN</span>=<span class="env-val">your_refresh_token</span>
+<span class="env-key">GOOGLE_ADS_MCC_ID</span>=<span class="env-val">your_mcc_customer_id</span></div>
+      </div>
+    </div>
+
+    <div class="setup-item">
+      <div class="setup-num">3</div>
+      <div class="setup-body">
+        <h4>Get Groq API Key (Free)</h4>
+        <p>Go to <strong>console.groq.com</strong> → Create account → API Keys → Create Key → paste into .env</p>
+      </div>
+    </div>
+
+    <div class="setup-item">
+      <div class="setup-num">4</div>
+      <div class="setup-body">
+        <h4>Get Google Ads Developer Token</h4>
+        <p>Google Ads → Admin → API Center → Copy Developer Token. Apply for Standard Access.</p>
+      </div>
+    </div>
+
+    <div class="setup-item">
+      <div class="setup-num">5</div>
+      <div class="setup-body">
+        <h4>Run the Server</h4>
+        <div class="code-preview">python google_ads_crew_v7.py</div>
+        <p style="margin-top:8px;">Open this file (<strong>crewai_dashboard_v7.html</strong>) in Chrome.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+const API = window.location.origin;
+
+function goTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab[onclick="goTab('${name}')"]`).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'analytics') calculateROI();
+  if (name === 'history') loadHistory();
+}
+
+async function autoFillFromURL() {
+  const url = document.getElementById('magic_url').value.trim();
+  if(!url) return alert("Enter a URL");
+  const btnText = document.getElementById('magic_btn_text');
+  btnText.innerText = "⏳ Reading...";
+  try {
+    const r = await fetch(API+'/analyze-url', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})});
+    const d = await r.json();
+    document.getElementById('f_name').value = d.business_name || '';
+    document.getElementById('f_type').value = d.business_type || '';
+    document.getElementById('f_loc').value = d.location || '';
+    document.getElementById('f_url').value = url;
+  } catch(e) { 
+    alert("AI couldn't read website directly (firewall). Please enter name/type manually."); 
+  }
+  btnText.innerText = "✨ Analyze & Autofill";
+}
+
+function syncBudgetToROI() {
+  document.getElementById('roi_budget').value = document.getElementById('f_budget').value || 50;
+  calculateROI();
+}
+
+function togglePublish() {
+  const on = document.getElementById('f_publish').checked;
+  document.getElementById('cidBox').classList.toggle('show', on);
+  document.getElementById('btnGen').className = 'btn ' + (on ? 'btn-green' : 'btn-blue');
+  document.getElementById('btnGen').innerText = on ? '🚀 Generate & Publish to Google Ads' : '🤖 Generate Campaign with 5 AI Agents';
+}
+
+function setStep(n, state) { document.getElementById('s'+n).className = 'step '+state; }
+
+async function checkHealth() {
+  try {
+    const r = await fetch(API + '/health');
+    document.getElementById('statusDot').className = 'dot online';
+    document.getElementById('statusText').innerText = 'System Online';
+  } catch {
+    document.getElementById('statusDot').className = 'dot offline';
+    document.getElementById('statusText').innerText = 'Offline';
+  }
+}
+
+async function runCampaign() {
+  const payload = {
+    business_name: document.getElementById('f_name').value,
+    business_type: document.getElementById('f_type').value,
+    website_url: document.getElementById('f_url').value,
+    target_location: document.getElementById('f_loc').value,
+    target_language: document.getElementById('f_lang').value,
+    conversion_goal: "Leads",
+    daily_budget: parseFloat(document.getElementById('f_budget').value) || 50,
+    auto_publish: document.getElementById('f_publish').checked,
+    customer_id: document.getElementById('f_cid').value
+  };
+
+  if(!payload.business_name) return alert("Fill in Business Name");
+
+  document.getElementById('btnGen').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  if(payload.auto_publish) document.getElementById('s6').style.display = 'block';
+  
+  setStep(1,'active'); document.getElementById('pFill').style.width='10%';
+  setTimeout(()=>{setStep(1,'done'); setStep(2,'active'); document.getElementById('pFill').style.width='30%';}, 23000);
+  setTimeout(()=>{setStep(2,'done'); setStep(3,'active'); document.getElementById('pFill').style.width='50%';}, 46000);
+  setTimeout(()=>{setStep(3,'done'); setStep(4,'active'); document.getElementById('pFill').style.width='70%';}, 69000);
+  setTimeout(()=>{setStep(4,'done'); setStep(5,'active'); document.getElementById('pFill').style.width='90%';}, 92000);
+
+  try {
+    const res = await fetch(API+'/run-crew', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const data = await res.json();
+    
+    document.getElementById('pFill').style.width='100%';
+    setStep(5,'done');
+    if(payload.auto_publish) { setStep(6,'active'); setTimeout(()=>setStep(6,'done'), 1000); }
+    
+    document.getElementById('noResults').style.display = 'none';
+    document.getElementById('resultsContainer').style.display = 'block';
+    
+    displayResults(data);
+    populateCompetitors(data);
+    goTab('results');
+  } catch(e) { 
+    alert("Error: " + e.message); 
+  }
+  
+  document.getElementById('btnGen').disabled = false;
+  document.getElementById('progressWrap').style.display = 'none';
+  [1,2,3,4,5,6].forEach(i=>setStep(i,''));
+}
+
+// ── DISPLAY ULTIMATE V6 UI + V7 DATA + PUBLISH BANNER ──
+function displayResults(data) {
+  const c = document.getElementById('resultsContainer');
+  const kw = data.keywords || {};
+  const copy = data.ad_copy || {};
+  const ab = data.ab_test_copy || {};
+  const strat = data.campaign_strategy || {};
+  const budget = data.budget_plan || strat.budget_plan || {};
+  const aud = data.audience_targeting || strat.audience_targeting || {};
+  const perf = data.performance_prediction || strat.performance_prediction || {};
+  const sched = data.ad_schedule || strat.ad_schedule || [];
+  const bids = data.bid_adjustments || strat.bid_adjustments || {};
+  const kbySvc = kw.keywords_by_service || {};
+  
+  // Keywords Grid
+  const bHtml = (kw.broad_match||[]).map(k=>`<span class="kw-b">${typeof k==='object'?k.keyword:k}</span>`).join('');
+  const pHtml = (kw.phrase_match||[]).map(k=>`<span class="kw-p">"${typeof k==='object'?k.keyword:k}"</span>`).join('');
+  const eHtml = (kw.exact_match||[]).map(k=>`<span class="kw-e">[${typeof k==='object'?k.keyword:k}]</span>`).join('');
+  const nHtml = (kw.negative_keywords||[]).map(k=>`<span class="kw-n">−${k}</span>`).join('');
+
+  // Sitelinks Grid
+  const sitelinks = (copy.sitelinks||[]).map(sl=>`
+    <div class="sitelink">
+      <div class="sitelink-title">${sl.title}</div>
+      <div class="sitelink-desc">${sl.description}</div>
+    </div>
+  `).join('');
+
+  // Folders (Keywords Per Service)
+  const kbsSec = Object.entries(kbySvc).map(([svc,words])=>`
+    <div class="service-group">
+      <div class="service-name">📁 ${svc}</div>
+      <div class="kw-wrap">${words.map(w=>`<span class="kw-b">${w}</span>`).join('')}</div>
+    </div>`).join('');
+
+  // Ad Groups
+  const agHtml = (strat.ad_groups||[]).map(ag=>`
+    <div class="ag-item">
+      <div><span class="ag-name">📁 ${ag.name}</span><span class="ag-theme">${ag.theme||''}</span></div>
+      <span class="ag-cpc">~$${ag.estimated_cpc}/click</span>
+    </div>
+  `).join('');
+
+  // Schedule & Bids
+  const schedRows = sched.map(s=>{
+    const mod = parseFloat(s.bid_modifier||1);
+    const cls = mod>1?'modifier-high':mod<1?'modifier-low':'modifier-normal';
+    const pct = mod===1?'Normal':(mod>1?`+${Math.round((mod-1)*100)}%`:`${Math.round((mod-1)*100)}%`);
+    return `<tr><td>${s.day}</td><td>${s.start} – ${s.end}</td><td class="${cls}">${pct}</td></tr>`;
+  }).join('');
+
+  const bidItems = Object.entries(bids).map(([k,v])=>{
+    const cls = v.startsWith('+')?'bid-pos':v.startsWith('-')?'bid-neg':'bid-zero';
+    const lbl = k.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+    return `<div class="bid-item"><div class="bid-item-label">${lbl}</div><div class="bid-item-val ${cls}">${v}</div></div>`;
+  }).join('');
+
+  // GTM Code
+  const gtmCode = `\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n})(window,document,'script','dataLayer','GTM-XXXXXXX');<\/script>\n`;
+  window._gtmCode = gtmCode;
+
+  // ── NEW: PUBLISH STATUS BANNER LOGIC ──
+  let publishBanner = '';
+  if (data.published_to_google_ads) {
+    const pub = data.published_to_google_ads;
+    if (pub.note && pub.note.includes("TEST MODE")) {
+      publishBanner = `<div style="background:rgba(251,191,36,0.05); border:1px solid #fbbf24; color:#fbbf24; padding:14px 18px; border-radius:10px; margin-bottom:20px; font-size:14px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:16px;">⚠️</span>
+        <span><strong>Test Mode Active:</strong> Campaign generated locally but NOT pushed to Google Ads. Add your real Google Ads API keys to your .env file to enable live publishing.</span>
+      </div>`;
+    } else if (pub.success) {
+      publishBanner = `<div style="background:rgba(52,255,224,0.05); border:1px solid var(--neon); color:var(--neon); padding:14px 18px; border-radius:10px; margin-bottom:20px; font-size:14px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:16px;">✅</span>
+        <span><strong>Successfully Published to Google Ads!</strong> Campaign pushed to Account: ${document.getElementById('f_cid').value}. It is currently in PAUSED status for your review.</span>
+      </div>`;
+    } else {
+      publishBanner = `<div style="background:rgba(248,113,113,0.05); border:1px solid var(--danger); color:var(--danger); padding:14px 18px; border-radius:10px; margin-bottom:20px; font-size:14px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:16px;">❌</span>
+        <span><strong>Failed to Publish:</strong><br>${(pub.errors || []).join('<br>')}</span>
+      </div>`;
+    }
+  }
+
+  // ── FINAL HTML INJECTION ──
+  c.innerHTML = `
+    ${publishBanner}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <div class="r-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <div class="r-title" style="margin-bottom:8px;">Campaign Score</div>
+        <div class="score-circle s-hi" style="margin-bottom:8px;">${perf.overall_score || 95}</div>
+        <div style="font-size:12px;color:var(--muted);">Quality: ${perf.quality_score_estimate||'9'}/10</div>
+      </div>
+      <div class="r-card">
+        <div class="r-title">💰 Budget Projection</div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num">$${budget.daily_budget||50}</div><div class="stat-lbl">Daily Budget</div></div>
+          <div class="stat-box"><div class="stat-num">$${(budget.daily_budget||50)*30}</div><div class="stat-lbl">Monthly Est.</div></div>
+          <div class="stat-box" style="background:rgba(52,255,224,0.06);border-color:rgba(52,255,224,0.15);"><div class="stat-num" style="color:var(--neon);">${budget.estimated_clicks_per_day||0}</div><div class="stat-lbl">Clicks/Day</div></div>
+          <div class="stat-box" style="background:rgba(52,255,224,0.06);border-color:rgba(52,255,224,0.15);"><div class="stat-num" style="color:var(--neon);">${perf.expected_monthly_leads||budget.estimated_conversions_per_month||0}</div><div class="stat-lbl">Leads/Month</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="r-card full">
+      <div class="r-title">✍️ Standard Ad Copy (Agent 2)</div>
+      <div class="ad-box">
+        <div class="ad-url">📍 ${(aud.locations||[''])[0]} · ${document.getElementById('f_url').value}</div>
+        <div class="ad-hl">${(copy.headlines||[])[0]} | ${(copy.headlines||[])[1]} | ${(copy.headlines||[])[2]}</div>
+        <div class="ad-desc">${(copy.descriptions||[])[0]}</div>
+      </div>
+
+      <div class="ab-box">
+        <div class="ab-title">🧪 A/B Test Variation (Agent 5 - Urgency Focus)</div>
+        <div class="ad-box" style="border:none; padding:0; margin:0; background:transparent;">
+          <div class="ad-url" style="color:var(--neon);">📍 ${(aud.locations||[''])[0]} · ${document.getElementById('f_url').value}</div>
+          <div class="ad-hl ab">${(ab.ab_headlines||[])[0]} | ${(ab.ab_headlines||[])[1]} | ${(ab.ab_headlines||[])[2]}</div>
+          <div class="ad-desc">${(ab.ab_descriptions||[])[0]}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="r-card full">
+      <div class="r-title">🔗 Sitelink Extensions</div>
+      <div class="sitelinks-container">${sitelinks}</div>
+    </div>
+
+    <div class="r-card full">
+      <div class="r-title">🔑 Keywords</div>
+      <div style="margin-bottom:16px;"><div class="r-title" style="margin-bottom:6px; font-size:10px;">BROAD MATCH</div><div class="kw-wrap">${bHtml}</div></div>
+      <div style="margin-bottom:16px;"><div class="r-title" style="margin-bottom:6px; font-size:10px;">PHRASE MATCH</div><div class="kw-wrap">${pHtml}</div></div>
+      <div style="margin-bottom:16px;"><div class="r-title" style="margin-bottom:6px; font-size:10px;">EXACT MATCH</div><div class="kw-wrap">${eHtml}</div></div>
+      <div><div class="r-title" style="margin-bottom:6px; font-size:10px;">NEGATIVE KEYWORDS</div><div class="kw-wrap">${nHtml}</div></div>
+    </div>
+
+    ${kbsSec ? `<div class="r-card full"><div class="r-title">📁 Keywords Per Service / Ad Group</div>${kbsSec}</div>` : ''}
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <div class="r-card" style="margin:0;">
+        <div class="r-title">📁 Ad Groups (STAG)</div>
+        ${agHtml}
+      </div>
+      <div class="r-card" style="margin:0;">
+        <div class="r-title">🎯 Targeting</div>
+        <div style="font-size:13px; line-height:2.2;">
+          <div>📍 <b style="color:var(--primary);">Location:</b> ${(aud.locations||[]).join(', ')}</div>
+          <div>🌐 <b style="color:var(--primary);">Language:</b> ${data.target_language}</div>
+          <div>📱 <b style="color:var(--primary);">Devices:</b> Mobile, Desktop</div>
+          <div>💰 <b style="color:var(--primary);">Bidding:</b> Maximize Conversions</div>
+        </div>
+      </div>
+    </div>
+
+    ${sched.length ? `<div class="r-card full">
+      <div class="r-title">🕐 Ad Schedule &amp; Bid Modifiers</div>
+      <table class="schedule-table">
+        <thead><tr><th>Day</th><th>Hours</th><th>Bid Modifier</th></tr></thead>
+        <tbody>${schedRows}</tbody>
+      </table>
+    </div>` : ''}
+
+    ${Object.keys(bids).length ? `<div class="r-card full">
+      <div class="r-title">⚙️ Bid Adjustments</div>
+      <div class="bid-grid">${bidItems}</div>
+    </div>` : ''}
+
+    <div class="r-card full">
+      <div class="r-title">🏷️ GTM Code</div>
+      <div class="code-preview">${gtmCode.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <div style="display:flex;gap:12px;margin-top:16px;">
+        <button class="copy-btn" onclick="copyGTM()">📋 Copy Code</button>
+        <button class="copy-btn email-btn" onclick="emailGTM()">✉️ Email to Client</button>
+      </div>
+    </div>
+  `;
+}
+
+function copyGTM() {
+  if(window._gtmCode) navigator.clipboard.writeText(window._gtmCode).then(()=>alert('Copied!'));
+}
+function emailGTM() {
+  if(!window._gtmCode) return;
+  const sub = encodeURIComponent("Your Google Tag Manager Code");
+  const bod = encodeURIComponent("Hi there,\n\nPlease add this code to the <head> of your website:\n\n" + window._gtmCode + "\n\nThanks!");
+  window.open(`mailto:?subject=${sub}&body=${bod}`);
+}
+
+function populateCompetitors(data) {
+  if(!data.competitor_analysis) return;
+  const comp = data.competitor_analysis.top_competitors || [];
+  const html = comp.map(c => `
+    <div class="competitor-card">
+      <div class="comp-type">${c.type}</div>
+      <div class="comp-spend">💰 Est Spend: ${c.estimated_monthly_spend}</div>
+      <div style="font-size:13px; margin-top:12px; color:var(--muted);">⚠️ Weakness: <span style="color:var(--text);">${c.weakness}</span></div>
+      <div style="font-size:13px; margin-top:6px; color:var(--muted);">✅ Opportunity: <span style="color:var(--neon);">${c.opportunity}</span></div>
+    </div>
+  `).join('');
+  document.getElementById('competitorResults').innerHTML = `<div class="competitor-grid">${html}</div>`;
+}
+
+function calculateROI() {
+  const budget  = parseFloat(document.getElementById('roi_budget').value) || 50;
+  const cpc     = parseFloat(document.getElementById('roi_cpc').value)    || 5;
+  const cvr     = parseFloat(document.getElementById('roi_cvr').value)    || 3;
+  const deal    = parseFloat(document.getElementById('roi_deal').value)   || 500;
+  const close   = parseFloat(document.getElementById('roi_close').value)  || 20;
+
+  const clicksDay    = budget / cpc;
+  const leadsDay     = clicksDay * (cvr / 100);
+  const leadsMonth   = leadsDay * 30;
+  const spendMonth   = budget * 30;
+  const closedLeads  = leadsMonth * (close / 100);
+  const revenueMonth = closedLeads * deal;
+  const roas         = spendMonth > 0 ? (revenueMonth / spendMonth) : 0;
+  const breakevenCpc = (deal * close / 100) * (cvr / 100);
+
+  document.getElementById('roiResults').innerHTML = `
+    <div class="roi-metric">
+      <div class="roi-val" style="color:var(--primary);">${Math.round(clicksDay * 30).toLocaleString()}</div>
+      <div class="roi-lbl">Clicks / Month</div>
+    </div>
+    <div class="roi-metric" style="background:rgba(52,255,224,0.06);border-color:rgba(52,255,224,0.2);">
+      <div class="roi-val" style="color:var(--neon);">${Math.round(leadsMonth)}</div>
+      <div class="roi-lbl">Leads / Month</div>
+    </div>
+    <div class="roi-metric" style="background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.2);">
+      <div class="roi-val" style="color:var(--violet-lt);">${Math.round(closedLeads)}</div>
+      <div class="roi-lbl">Closed Sales / Month</div>
+    </div>
+    <div class="roi-metric">
+      <div class="roi-val" style="color:var(--primary);">$${Math.round(spendMonth).toLocaleString()}</div>
+      <div class="roi-lbl">Ad Spend / Month</div>
+    </div>
+    <div class="roi-metric" style="background:rgba(52,255,224,0.06);border-color:rgba(52,255,224,0.2);">
+      <div class="roi-val" style="color:var(--neon);">$${Math.round(revenueMonth).toLocaleString()}</div>
+      <div class="roi-lbl">Revenue / Month</div>
+    </div>
+    <div class="roi-metric" style="${roas >= 3 ? 'background:rgba(52,255,224,0.06);border-color:rgba(52,255,224,0.2);' : roas >= 1 ? '' : 'background:rgba(251,191,36,0.06);border-color:rgba(251,191,36,0.2);'}">
+      <div class="roi-val" style="color:${roas >= 3 ? 'var(--neon)' : roas >= 1 ? 'var(--primary)' : 'var(--warning)'};">${roas.toFixed(1)}x</div>
+      <div class="roi-lbl">ROAS</div>
+    </div>
+    <div class="roi-metric" style="grid-column:1/-1; background:rgba(251,191,36,0.06);border-color:rgba(251,191,36,0.2);">
+      <div class="roi-val" style="color:var(--warning);">$${breakevenCpc.toFixed(2)}</div>
+      <div class="roi-lbl">Breakeven CPC (anything below this = profitable)</div>
+    </div>
+  `;
+
+  const months = [
+    { label: 'Month 1', revenue: revenueMonth * 0.7, spend: spendMonth },
+    { label: 'Month 2', revenue: revenueMonth * 0.9, spend: spendMonth },
+    { label: 'Month 3', revenue: revenueMonth,       spend: spendMonth },
+  ];
+  const maxRevenue = Math.max(...months.map(m => m.revenue), spendMonth * 1.5);
+
+  document.getElementById('roiChart').innerHTML = months.map(m => {
+    const revenueW = Math.min(100, (m.revenue / maxRevenue) * 100);
+    const spendW   = Math.min(100, (m.spend   / maxRevenue) * 100);
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);font-family:var(--font-disp);margin-bottom:6px;">${m.label}</div>
+        <div class="projection-bar-row">
+          <div class="projection-bar-label">Revenue</div>
+          <div class="projection-bar-wrap">
+            <div class="projection-bar-fill" style="width:${revenueW}%;background:linear-gradient(90deg,#34ffe0,#00d4ff);">
+              <span class="projection-bar-val">$${Math.round(m.revenue).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+        <div class="projection-bar-row">
+          <div class="projection-bar-label">Ad Spend</div>
+          <div class="projection-bar-wrap">
+            <div class="projection-bar-fill" style="width:${spendW}%;background:linear-gradient(90deg,#8b5cf6,#a78bfa);">
+              <span class="projection-bar-val">$${Math.round(m.spend).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function generateLandingPage() {
+  document.getElementById('btnLP').innerText = "⏳ Generating...";
+  try {
+    const payload = {
+      business_name: document.getElementById('f_name').value,
+      business_type: document.getElementById('f_type').value,
+      target_language: document.getElementById('f_lang').value,
+      website_url:"", target_location:"", conversion_goal:"", daily_budget:50
+    };
+    
+    const r = await fetch(API+'/generate-landing-page', {
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify(payload)
+    });
+    
+    const d = await r.json();
+    
+    if (!r.ok) {
+        throw new Error(d.detail || "Server crashed while generating landing page");
+    }
+    
+    document.getElementById('lpPreviewCard').style.display = 'block';
+    document.getElementById('lpIframe').srcdoc = d.html;
+    
+  } catch(e) { 
+      alert("Error: " + e.message); 
+      document.getElementById('lpPreviewCard').style.display = 'block';
+      document.getElementById('lpIframe').srcdoc = `<h2 style="color:red; font-family:sans-serif; padding:20px;">Generation Failed: ${e.message}</h2>`;
+  }
+  document.getElementById('btnLP').innerText = "🌐 Generate Tailwind Landing Page";
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch(API + '/history');
+    const d = await r.json();
+    const el = document.getElementById('histList');
+    if (!d.campaigns || !d.campaigns.length) { el.innerHTML = '<p style="color:var(--muted);font-size:14px;">No campaigns yet.</p>'; return; }
+    el.innerHTML = d.campaigns.slice().reverse().map(c=>`
+      <div class="hist-item">
+        <div>
+          <div style="font-weight:700;font-size:14px;font-family:var(--font-disp);color:var(--text);">${c.business_name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">📍 ${c.target_location} · $${c.daily_budget}/day · ${new Date(c.created_at).toLocaleString()}</div>
+        </div>
+        <span class="badge ${c.published?'badge-live':'badge-draft'}">${c.published?'✅ Published':'📋 Draft'}</span>
+      </div>`).join('');
+  } catch {
+    document.getElementById('histList').innerHTML = '<p style="color:var(--muted);">Server offline.</p>';
+  }
+}
+
+calculateROI();
+checkHealth();
+setInterval(checkHealth, 10000);
+</script>
+</body>
+</html>
