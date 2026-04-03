@@ -909,67 +909,69 @@ class GoogleAdsPublisher:
                     cr2.keyword.match_type = self.client.enums.KeywordMatchTypeEnum.BROAD
                     ops.append(op)
                 ccsvc.mutate_campaign_criteria(customer_id=self.customer_id, operations=ops)
-
-            # ── Ad Groups & Keywords ──
-            all_kws = (keywords_data.get("broad_match", []) +
-                       keywords_data.get("phrase_match", []) +
-                       keywords_data.get("exact_match", []))
-            
-            # 👇 THE FIX: Grab every keyword from the AI's Service Folders!
-            for folder_name, folder_keywords in keywords_data.get("keywords_by_service", {}).items():
-                for kw in folder_keywords:
-                    all_kws.append({"keyword": kw, "match_type": "PHRASE"})
-                    
-            ag_info = campaign_data.get("ad_groups", [{"name": "General", "estimated_cpc": 3.00}])
-            kpg = max(1, len(all_kws) // len(ag_info))
-
+                
+# ── Ad Groups & Keywords (Perfect STAG Mapping) ──
             agsvc  = self.client.get_service("AdGroupService")
             agcsvc = self.client.get_service("AdGroupCriterionService")
             adasvc = self.client.get_service("AdGroupAdService")
-            match_map = {
-                "BROAD":  self.client.enums.KeywordMatchTypeEnum.BROAD,
-                "PHRASE": self.client.enums.KeywordMatchTypeEnum.PHRASE,
-                "EXACT":  self.client.enums.KeywordMatchTypeEnum.EXACT,
-            }
+            
+            # Get default CPC from strategy data
+            ag_info = campaign_data.get("ad_groups", [{"name": "General", "estimated_cpc": 3.00}])
+            default_cpc = ag_info[0].get("estimated_cpc", 3.00) if ag_info else 3.00
 
-            for i, ag in enumerate(ag_info):
+            # Get the folders, and if there are general keywords, put them in a General folder
+            service_folders = keywords_data.get("keywords_by_service", {})
+            general_kws = keywords_data.get("broad_match", []) + keywords_data.get("phrase_match", []) + keywords_data.get("exact_match", [])
+            if general_kws and not service_folders:
+                service_folders["General Search"] = general_kws
+
+            # Loop through each specific service folder to create its own Ad Group!
+            for folder_name, folder_keywords in service_folders.items():
+                if not folder_keywords:
+                    continue
+                
+                # 1. Create the Ad Group named exactly after the folder
                 agop = self.client.get_type("AdGroupOperation")
                 a = agop.create
-                a.name = ag["name"]
+                a.name = folder_name[:255] # Google Ads limit
                 a.campaign = camp_res
                 a.status = self.client.enums.AdGroupStatusEnum.ENABLED
                 a.type_ = self.client.enums.AdGroupTypeEnum.SEARCH_STANDARD
-                a.cpc_bid_micros = int(ag.get("estimated_cpc", 3.00) * 1_000_000)
+                
+                # Find matching CPC from the Strategy Agent
+                matched_cpc = default_cpc
+                for ag in ag_info:
+                    if ag["name"].lower() in folder_name.lower() or folder_name.lower() in ag["name"].lower():
+                        matched_cpc = ag.get("estimated_cpc", default_cpc)
+                        break
+                a.cpc_bid_micros = int(matched_cpc * 1_000_000)
+                
                 agr = agsvc.mutate_ad_groups(customer_id=self.customer_id, operations=[agop])
                 ag_res = agr.results[0].resource_name
                 results["ad_groups_created"] += 1
 
-                start = i * kpg
-                end = start + kpg if i < len(ag_info) - 1 else len(all_kws)
-                grp = all_kws[start:end]
-
-                if grp:
-                    kwops = []
-                    for kw in grp:
-                        op = self.client.get_type("AdGroupCriterionOperation")
-                        cr3 = op.create
-                        cr3.ad_group = ag_res
-                        cr3.status = self.client.enums.AdGroupCriterionStatusEnum.ENABLED
-                        cr3.keyword.text = kw.get("keyword", kw) if isinstance(kw, dict) else kw
-                        cr3.keyword.match_type = match_map.get(
-                            kw.get("match_type", "BROAD") if isinstance(kw, dict) else "BROAD",
-                            self.client.enums.KeywordMatchTypeEnum.BROAD
-                        )
-                        kwops.append(op)
+                # 2. Upload ONLY the keywords for this specific service
+                kwops = []
+                for kw in folder_keywords:
+                    op = self.client.get_type("AdGroupCriterionOperation")
+                    cr3 = op.create
+                    cr3.ad_group = ag_res
+                    cr3.status = self.client.enums.AdGroupCriterionStatusEnum.ENABLED
+                    cr3.keyword.text = kw.get("keyword", kw) if isinstance(kw, dict) else str(kw)
+                    cr3.keyword.match_type = self.client.enums.KeywordMatchTypeEnum.PHRASE
+                    kwops.append(op)
+                
+                if kwops:
                     agcsvc.mutate_ad_group_criteria(customer_id=self.customer_id, operations=kwops)
                     results["keywords_uploaded"] += len(kwops)
 
-                # ── Responsive Search Ad ──
+                # 3. Create the Ad for this specific Ad Group
                 adaop = self.client.get_type("AdGroupAdOperation")
                 aa = adaop.create
                 aa.ad_group = ag_res
                 aa.status = self.client.enums.AdGroupAdStatusEnum.ENABLED
                 rsa = aa.ad.responsive_search_ad
+                
                 for hl in ad_copy_data.get("headlines", [])[:15]:
                     asset = self.client.get_type("AdTextAsset")
                     asset.text = hl[:30]
@@ -978,6 +980,7 @@ class GoogleAdsPublisher:
                     asset = self.client.get_type("AdTextAsset")
                     asset.text = desc[:90]
                     rsa.descriptions.append(asset)
+                    
                 aa.ad.final_urls.append(website_url)
                 adasvc.mutate_ad_group_ads(customer_id=self.customer_id, operations=[adaop])
                 results["ads_created"] += 1
