@@ -508,6 +508,7 @@ async function runCampaign() {
   try {
     const res = await fetch(API+'/run-crew', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
     const data = await res.json();
+    window.lastGeneratedData = data;
     
     document.getElementById('pFill').style.width='100%';
     setStep(5,'done');
@@ -589,26 +590,27 @@ function displayResults(data) {
   const gtmCode = `\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n})(window,document,'script','dataLayer','GTM-XXXXXXX');<\/script>\n`;
   window._gtmCode = gtmCode;
 
-  // ── NEW: PUBLISH STATUS BANNER LOGIC ──
-  let publishBanner = '';
+ let publishBanner = '';
   if (data.published_to_google_ads) {
+    // If it was auto-published, show the success banner
     const pub = data.published_to_google_ads;
-    if (pub.note && pub.note.includes("TEST MODE")) {
-      publishBanner = `<div style="background:rgba(251,191,36,0.05); border:1px solid #fbbf24; color:#fbbf24; padding:14px 18px; border-radius:10px; margin-bottom:20px; font-size:14px; display:flex; align-items:center; gap:8px;">
-        <span style="font-size:16px;">⚠️</span>
-        <span><strong>Test Mode Active:</strong> Campaign generated locally but NOT pushed to Google Ads. Add your real Google Ads API keys to your .env file to enable live publishing.</span>
-      </div>`;
-    } else if (pub.success) {
-      publishBanner = `<div style="background:rgba(52,255,224,0.05); border:1px solid var(--neon); color:var(--neon); padding:14px 18px; border-radius:10px; margin-bottom:20px; font-size:14px; display:flex; align-items:center; gap:8px;">
-        <span style="font-size:16px;">✅</span>
-        <span><strong>Successfully Published to Google Ads!</strong> Campaign pushed to Account: ${document.getElementById('f_cid').value}. It is currently in PAUSED status for your review.</span>
-      </div>`;
-    } else {
-      publishBanner = `<div style="background:rgba(248,113,113,0.05); border:1px solid var(--danger); color:var(--danger); padding:14px 18px; border-radius:10px; margin-bottom:20px; font-size:14px; display:flex; align-items:center; gap:8px;">
-        <span style="font-size:16px;">❌</span>
-        <span><strong>Failed to Publish:</strong><br>${(pub.errors || []).join('<br>')}</span>
+    if (pub.success) {
+      publishBanner = `<div style="background:rgba(52,255,224,0.05); border:1px solid var(--neon); color:var(--neon); padding:14px 18px; border-radius:10px; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:16px;">✅</span> <span><strong>Successfully Published!</strong> Campaign is currently in PAUSED status.</span>
       </div>`;
     }
+  } else {
+    // If NOT auto-published, show the Review & Publish box!
+    publishBanner = `
+      <div class="r-card full" id="manualPublishBox" style="background:rgba(139,92,246,0.05); border-color:var(--violet-lt); margin-bottom:20px;">
+        <div class="r-title" style="color:var(--violet-lt); font-size:14px;">🚀 Ready to go live?</div>
+        <p style="font-size:13px; color:var(--text); margin-bottom:12px;">Review the campaign below. If everything looks perfect, enter the Client's Google Ads ID to publish it directly to their account.</p>
+        <div style="display:flex; gap:10px;">
+          <input id="publish_cid_manual" placeholder="123-456-7890" style="width:250px;">
+          <button class="btn btn-teal btn-sm" id="btnPublishLater" onclick="publishAfterReview()" style="margin:0; width:auto;">Push to Google Ads</button>
+        </div>
+      </div>
+    `;
   }
 
   // ── FINAL HTML INJECTION ──
@@ -857,6 +859,44 @@ async function loadHistory() {
       </div>`).join('');
   } catch {
     document.getElementById('histList').innerHTML = '<p style="color:var(--muted);">Server offline.</p>';
+  }
+}
+async function publishAfterReview() {
+  const cid = document.getElementById('publish_cid_manual').value.trim();
+  if(!cid) return alert("Please enter a Google Ads Account ID first.");
+  if(!window.lastGeneratedData) return alert("No campaign data found.");
+
+  const btn = document.getElementById('btnPublishLater');
+  btn.disabled = true;
+  btn.innerText = "⏳ Publishing to Google Ads...";
+
+  try {
+    const payload = {
+      customer_id: cid,
+      website_url: document.getElementById('f_url').value,
+      campaign_data: window.lastGeneratedData.campaign_strategy,
+      keywords_data: window.lastGeneratedData.keywords,
+      ad_copy_data: window.lastGeneratedData.ad_copy
+    };
+
+    const res = await fetch(API + '/publish-campaign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.detail || "Server error");
+
+    document.getElementById('manualPublishBox').innerHTML = `
+      <div style="color:var(--neon); font-size:14px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:18px;">✅</span> Campaign Successfully Published & Paused in Account ${cid}!
+      </div>
+    `;
+  } catch (e) {
+    alert("❌ Error publishing: " + e.message);
+    btn.disabled = false;
+    btn.innerText = "Push to Google Ads";
   }
 }
 
