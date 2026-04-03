@@ -29,6 +29,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from crewai import Agent, Task, Crew, Process
+from pydantic import BaseModel, Field
+from typing import List
+
+class Sitelink(BaseModel):
+    link_text: str = Field(..., description="Max 25 characters. e.g., 'Get a Free Quote'")
+    description_1: str = Field(..., description="Max 35 characters.")
+    description_2: str = Field(..., description="Max 35 characters.")
+
+class AdCopyModel(BaseModel):
+    headlines: List[str] = Field(..., description="You MUST generate exactly 15 unique headlines (max 30 chars each). Mix keywords, benefits, and calls to action.")
+    descriptions: List[str] = Field(..., description="You MUST generate exactly 4 unique descriptions (max 90 chars each).")
+    sitelinks: List[Sitelink] = Field(..., description="Generate exactly 4 sitelink extensions for the business (e.g., About Us, Contact, Reviews, Services).")
 
 # ─────────────────────────────────────────────────────────────
 # LOAD .env FILE
@@ -143,26 +155,39 @@ def get_task_output(task) -> str:
 
 def scrape_website(url: str) -> str:
     """
-    Upgraded Scraper: 
-    - Reads up to 4000 characters (instead of 800)
-    - No longer deletes <nav> menus so it can see all service lists!
+    Ultimate Stealth Scraper: Uses Jina AI Proxy to bypass Cloudflare/GoDaddy Firewalls.
     """
     try:
         if not url.startswith("http"):
             url = "https://" + url
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        resp = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(resp.content, "html.parser")
+            
+        print(f"\n🕵️ Deploying stealth scraper to bypass firewall for: {url}")
         
-        # Notice we removed "nav" from this list so it reads the menu!
+        # Jina AI acts as a proxy that renders JS and sneaks past anti-bot firewalls
+        jina_url = f"https://r.jina.ai/{url}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        
+        # Give it 15 seconds because bypassing firewalls takes a moment
+        response = requests.get(jina_url, headers=headers, timeout=15)
+        
+        # If it successfully bypassed the security
+        if response.status_code == 200 and len(response.text) > 50:
+            print("✅ Firewall bypassed successfully!")
+            return response.text[:4000]
+            
+        # Fallback to standard scraping if proxy is busy
+        print("⚠️ Proxy busy, trying standard connection...")
+        resp_fallback = requests.get(url, headers=headers, timeout=10)
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp_fallback.content, "html.parser")
         for tag in soup(["script", "style", "footer"]):
             tag.decompose()
-            
-        # Increased limit from 800 to 4000 to capture the whole page
         return soup.get_text(separator=" ", strip=True)[:4000]
         
     except Exception as e:
-        print(f"⚠️ Could not scrape website: {e}")
+        print(f"⚠️ Scraper failed: {e}")
         return ""
 
 # ─────────────────────────────────────────────────────────────
@@ -316,6 +341,42 @@ Return ONLY valid JSON:
     except Exception as e:
         print(f"⚠️ analyze-competitors error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+    # Add this new request model near the top where your other models are
+class PublishRequest(BaseModel):
+    customer_id: str
+    website_url: str
+    campaign_data: dict
+    keywords_data: dict
+    ad_copy_data: dict
+
+# Add this endpoint right above your @app.post("/run-crew") endpoint
+@app.post("/publish-campaign")
+async def publish_campaign_endpoint(request: PublishRequest):
+    try:
+        print(f"\n🚀 Manually publishing campaign to account: {request.customer_id}")
+        
+        # Check if we are in Test Mode
+        if not GOOGLE_ADS_AVAILABLE or not GOOGLE_ADS_LIVE:
+            kw_count = len(request.keywords_data.get("broad_match", [])) + len(request.keywords_data.get("phrase_match", []))
+            return {
+                "success": True,
+                "status": "PAUSED",
+                "note": "⚠️ TEST MODE — Added credentials to .env file to publish live",
+                "keywords_uploaded": kw_count,
+                "ad_groups_created": len(request.campaign_data.get("ad_groups", []))
+            }
+
+        # Run the real publisher
+        publisher = GoogleAdsPublisher(request.customer_id)
+        result = publisher.publish_full_campaign(
+            request.campaign_data, request.keywords_data, request.ad_copy_data, request.website_url
+        )
+        return result
+        
+    except Exception as e:
+        print(f"❌ Publish Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ─────────────────────────────────────────────────────────────
@@ -324,6 +385,8 @@ Return ONLY valid JSON:
 @app.post("/run-crew")
 async def run_crew(request: CampaignRequest):
     try:
+        if not request.website_url.startswith("http"):
+            request.website_url = "https://" + request.website_url
         print(f"\n{'='*60}")
         print(f"  v7 — Starting 5-Agent automation ({request.target_language})")
         print(f"  Business: {request.business_name}")
@@ -417,13 +480,13 @@ Return ONLY valid JSON:
             llm=LLM_MODEL, verbose=True
         )
         strategy_task = Task(
-            description=f"""Design an enterprise STAG campaign for:
-Business: {request.business_name} | Location: {request.target_location}
-Goal: {request.conversion_goal} | Daily Budget: ${request.daily_budget} | Language: {request.target_language}
-
-- One Ad Group per unique service found by the keyword agent
-- Assign realistic CPC per Ad Group based on service value
-- Aggressive ad schedule with bid modifiers
+            description=f"""Scrape the website URL: {request.website_url}. You MUST do a deep dive. 
+Do NOT just output generic 'Installation' and 'Repair'. 
+1. Look for dropdown menus, product types, and materials. 
+2. Explicitly list Aluminum, Wood, Glass, Insulated, Steel, etc. 
+3. Create a unique STAG (Single Theme Ad Group) for EVERY specific sub-service and material you find.
+- Assign realistic CPC per Ad Group based on service value.
+- Aggressive ad schedule with bid modifiers.
 
 Return ONLY valid JSON:
 {{
@@ -432,8 +495,9 @@ Return ONLY valid JSON:
   "bidding_strategy": "MAXIMIZE_CONVERSIONS",
   "target_cpa": 45,
   "ad_groups": [
-    {{"name": "Service 1", "theme": "High-intent searches", "estimated_cpc": 8.00}},
-    {{"name": "Service 2", "theme": "Emergency repair searches", "estimated_cpc": 6.50}}
+    {{"name": "Aluminum Doors", "theme": "High-intent searches", "estimated_cpc": 8.00}},
+    {{"name": "Glass Doors", "theme": "Premium searches", "estimated_cpc": 12.50}},
+    {{"name": "Wood Doors", "theme": "Premium searches", "estimated_cpc": 10.00}}
   ],
   "budget_plan": {{
     "daily_budget": {request.daily_budget},
@@ -449,27 +513,18 @@ Return ONLY valid JSON:
     "ad_schedule":  "Mon-Fri 06:00-20:00, Sat-Sun 08:00-16:00"
   }},
   "ad_schedule": [
-    {{"day":"Monday",    "start":"06:00","end":"20:00","bid_modifier":1.1}},
-    {{"day":"Tuesday",   "start":"06:00","end":"20:00","bid_modifier":1.1}},
-    {{"day":"Wednesday", "start":"06:00","end":"20:00","bid_modifier":1.1}},
-    {{"day":"Thursday",  "start":"06:00","end":"20:00","bid_modifier":1.2}},
-    {{"day":"Friday",    "start":"06:00","end":"18:00","bid_modifier":1.0}},
-    {{"day":"Saturday",  "start":"08:00","end":"16:00","bid_modifier":0.9}},
-    {{"day":"Sunday",    "start":"08:00","end":"16:00","bid_modifier":0.8}}
+    {{"day":"Monday",    "start":"06:00","end":"20:00","bid_modifier":1.1}}
   ],
   "bid_adjustments": {{
-    "mobile":              "+25%",
-    "desktop":             "-10%",
-    "morning_6am_10am":   "+20%",
-    "afternoon_2pm_6pm":  "+15%",
-    "location_radius_5km":"+30%"
+    "mobile":            "+25%",
+    "desktop":           "-10%"
   }},
   "performance_prediction": {{
     "overall_score":          95,
     "predicted_ctr":          "8-12%",
     "quality_score_estimate": 9,
     "expected_monthly_leads": {max(1, int(request.daily_budget * 30 / 45))},
-    "notes": "STAG structure maximizes ad relevance and Quality Score."
+    "notes": "Deep STAG structure deployed."
   }}
 }}""",
             agent=strategy_agent,
@@ -800,7 +855,7 @@ class GoogleAdsPublisher:
             br = bsvc.mutate_campaign_budgets(customer_id=self.customer_id, operations=[bop])
             budget_res = br.results[0].resource_name
 
-            # ── Campaign ──
+           # ── Campaign ──
             csvc = self.client.get_service("CampaignService")
             cop = self.client.get_type("CampaignOperation")
             c = cop.create
@@ -808,6 +863,10 @@ class GoogleAdsPublisher:
             c.status = self.client.enums.CampaignStatusEnum.PAUSED
             c.advertising_channel_type = self.client.enums.AdvertisingChannelTypeEnum.SEARCH
             c.campaign_budget = budget_res
+            
+            # 👇 THE FIX: Mandatory EU Political Advertising Declaration
+            c.contains_eu_political_advertising = self.client.enums.EuPoliticalAdvertisingStatusEnum.DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING
+            
             c.maximize_conversions.target_cpa_micros = int(campaign_data.get("target_cpa", 50) * 1_000_000)
             c.network_settings.target_google_search = True
             c.network_settings.target_search_network = True
@@ -855,6 +914,12 @@ class GoogleAdsPublisher:
             all_kws = (keywords_data.get("broad_match", []) +
                        keywords_data.get("phrase_match", []) +
                        keywords_data.get("exact_match", []))
+            
+            # 👇 THE FIX: Grab every keyword from the AI's Service Folders!
+            for folder_name, folder_keywords in keywords_data.get("keywords_by_service", {}).items():
+                for kw in folder_keywords:
+                    all_kws.append({"keyword": kw, "match_type": "PHRASE"})
+                    
             ag_info = campaign_data.get("ad_groups", [{"name": "General", "estimated_cpc": 3.00}])
             kpg = max(1, len(all_kws) // len(ag_info))
 
@@ -917,7 +982,33 @@ class GoogleAdsPublisher:
                 adasvc.mutate_ad_group_ads(customer_id=self.customer_id, operations=[adaop])
                 results["ads_created"] += 1
 
-            results["sitelinks_created"] = len(ad_copy_data.get("sitelinks", []))
+            # ── Sitelink Extensions API Upload ──
+            sitelinks_data = ad_copy_data.get("sitelinks", [])
+            if sitelinks_data:
+                asset_svc = self.client.get_service("AssetService")
+                camp_asset_svc = self.client.get_service("CampaignAssetService")
+                
+                for sl in sitelinks_data:
+                    # 1. Create the Asset
+                    asset_op = self.client.get_type("AssetOperation")
+                    asset = asset_op.create
+                    asset.sitelink_asset.link_text = sl.get("title", "Learn More")[:25]
+                    asset.sitelink_asset.description1 = sl.get("description", "")[:35]
+                    asset.final_urls.append(sl.get("url", website_url))
+                    
+                    asset_response = asset_svc.mutate_assets(customer_id=self.customer_id, operations=[asset_op])
+                    asset_resource_name = asset_response.results[0].resource_name
+                    
+                    # 2. Attach Asset to the Campaign
+                    camp_asset_op = self.client.get_type("CampaignAssetOperation")
+                    camp_asset = camp_asset_op.create
+                    camp_asset.campaign = camp_res
+                    camp_asset.asset = asset_resource_name
+                    camp_asset.field_type = self.client.enums.AssetFieldTypeEnum.SITELINK
+                    
+                    camp_asset_svc.mutate_campaign_assets(customer_id=self.customer_id, operations=[camp_asset_op])
+
+            results["sitelinks_created"] = len(sitelinks_data)
             results["success"] = True
 
         except Exception as e:
