@@ -1,9 +1,19 @@
+# --- The Core Server ---
 fastapi
 uvicorn
+
+# --- The Whack-a-Mole Locks (Network & Auth) ---
 instructor==1.3.3
 idna==3.6
 httpcore==1.0.8
 h11==0.14.0
+
+# --- Defensive AI Locks (Prevents future crashes) ---
+pydantic<3.0.0
+typing-extensions>=4.5.0
+litellm
+
+# --- The Brains & Tools ---
 crewai
 langchain-openai
 python-dotenv
